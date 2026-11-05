@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { background: #FFF6E5; }
+  body { @apply bg-paper font-sans text-plum-900 antialiased; }
+  ::selection { background: #FFB020; color: #1B1033; }
+  h1, h2, h3 { @apply font-display tracking-tight; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex h-11 select-none items-center justify-center gap-2 rounded-xl border-2 border-plum-900 px-5 text-sm font-semibold transition disabled:pointer-events-none disabled:opacity-40;
+  }
+  .btn-primary { @apply btn bg-marigold-500 text-plum-950 shadow-pop hover:-translate-y-px active:translate-y-1 active:shadow-none; }
+  .btn-dark { @apply btn bg-plum-900 text-paper hover:bg-plum-700; }
+  .btn-plain { @apply btn bg-transparent text-plum-900 hover:bg-paper-deep; }
+  .btn-danger { @apply btn bg-transparent text-coral-600 border-coral-500 hover:bg-coral-500/10; }
+  .panel { @apply rounded-2xl border-2 border-plum-900 bg-paper-card shadow-soft; }
+  .field {
+    @apply h-12 w-full rounded-xl border-2 border-plum-900/70 bg-paper-card px-4 text-[15px] outline-none transition placeholder:text-plum-500/70 focus:border-plum-900 focus:ring-4 focus:ring-marigold-500/40;
+  }
+  .field-label { @apply mb-1.5 block text-sm font-semibold; }
+}
