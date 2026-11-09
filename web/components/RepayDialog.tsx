@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { formatAmount, money, parseAmount, SYMBOL } from "@/lib/format";
 
 export function RepayDialog({
@@ -17,11 +17,62 @@ export function RepayDialog({
   const [text, setText] = useState("");
   const amt = parseAmount(text);
   const valid = amt !== null && amt > 0n && amt <= left;
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
+
+  // Remember the trigger ("Pay back") and give focus back to it on close.
+  useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null;
+    return () => trigger?.focus();
+  }, []);
+
+  // Escape closes; Tab stays inside the dialog.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (!busyRef.current) closeRef.current();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const items = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>("button, input, [href], [tabindex]:not([tabindex='-1'])"),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (!dialogRef.current.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-plum-950/50 p-4 sm:items-center" onClick={onClose}>
-      <div className="panel w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-2xl font-bold">Pay back</h3>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="panel w-full max-w-sm p-5"
+        onClick={(e) => e.stopPropagation()}>
+        <h3 id={titleId} className="text-2xl font-bold">Pay back</h3>
         <p className="mt-1 text-sm text-plum-700">Still owing {money(left)}. Pay it all or a bit at a time.</p>
 
         <label className="field-label mt-4" htmlFor="repay-amt">Amount ({SYMBOL})</label>
@@ -34,8 +85,10 @@ export function RepayDialog({
           onChange={(e) => setText(e.target.value)}
           autoFocus
         />
-        {text && !valid && <p className="mt-1 text-xs text-coral-600">Enter an amount up to {formatAmount(left)}.</p>}
-        <button className="mt-2 text-xs font-semibold underline" onClick={() => setText(formatAmount(left).replace(/,/g, ""))}>
+        <div aria-live="polite" role="status">
+          {text && !valid && <p className="mt-1 text-xs text-coral-600">Enter an amount up to {formatAmount(left)}.</p>}
+        </div>
+        <button type="button" className="mt-2 text-xs font-semibold underline" onClick={() => setText(formatAmount(left).replace(/,/g, ""))}>
           Pay everything
         </button>
 
