@@ -2,6 +2,7 @@ import { format, formatDistanceToNowStrict, fromUnixTime } from "date-fns";
 
 export const DECIMALS = 7;
 const UNIT = 10n ** BigInt(DECIMALS);
+const I128_MAX = 2n ** 127n - 1n;
 export const SYMBOL = process.env.NEXT_PUBLIC_TOKEN_SYMBOL || "XLM";
 
 /** "12.5" -> 125000000n. Returns null when the text isn't a valid amount. */
@@ -9,7 +10,8 @@ export function parseAmount(text: string): bigint | null {
   const t = text.trim();
   if (!/^\d+(\.\d{1,7})?$/.test(t)) return null;
   const [whole, frac = ""] = t.split(".");
-  return BigInt(whole) * UNIT + BigInt(frac.padEnd(DECIMALS, "0"));
+  const units = BigInt(whole) * UNIT + BigInt(frac.padEnd(DECIMALS, "0"));
+  return units > I128_MAX ? null : units;
 }
 
 /** 125000000n -> "12.5" */
